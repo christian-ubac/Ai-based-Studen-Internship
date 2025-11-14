@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fallback native CSS so the app shows colors even if Tailwind hasn't been processed yet */
+body {
+  /* approximate Tailwind's green-100 -> green-200 gradient */
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  min-height: 100vh;
+  color: #1f2937; /* gray-800 */
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700; /* bold */
+  color: #111827; /* gray-900 */
+}
+.upload-card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+}
+.upload-card h3 {
+  margin-top: 0;
+  color: #111;
+}
+.upload-card p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  border: 2px dashed #d0d0d0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.drop-zone.drag-over {
+  border-color: #6200EE;
+  background-color: #f0eaff;
+}
+.drop-zone svg {
+  margin-bottom: 12px;
+  color: #909090;
+}
+.browse-button {
+  color: #6200EE;
+  font-weight: 500;
+  text-decoration: underline;
+  padding: 4px;
+  cursor: pointer;
+}
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #333;
+}
+.remove-btn {
+  border: none;
+  background: none;
+  color: #ff0000;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.error-message {
+  color: #D32F2F;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.btn-cancel, .btn-upload {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-cancel {
+  background-color: #f0f0f0;
+  color: #555;
+}
+.btn-cancel:hover {
+  background-color: #e0e0e0;
+}
+.btn-upload {
+  background-color: #6200EE;
+  color: #ffffff;
+}
+.btn-upload:hover {
+  background-color: #5a00d1;
+}
+.btn-upload:disabled {
+  background-color: #b0b0b0;
+  cursor: not-allowed;
+}
+.recommendations-container {
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.job-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+.job-card h3 {
+  margin-top: 0;
+  color: #333;
+}
+.job-card h4 {
+  margin: 4px 0;
+  color: #6200EE;
+  font-weight: 500;
+}
+.location {
+  color: #666;
+  font-size: 14px;
+}
+.skills-match {
+  margin-top: 12px;
+}
+.skill-tag {
+  display: inline-block;
+  background-color: #f0eaff;
+  color: #6200EE;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-right: 6px;
+  margin-top: 4px;
+}
+.apply-link {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 10px 16px;
+  background-color: #6200EE;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+.apply-link:hover {
+  background-color: #5a00d1;
+}
+.loading-spinner, .error-message, .empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+/* This is a shared class name, so it's good it's defined here. */
+.error-message {
+  color: #D32F2F;
+  font-size: 14px;
+  margin-top: 16px;
+}

@@ -1,0 +1,79 @@
+JOHN DOE
+San Francisco, CA 94105
+john.doe@email.com | (555) 123-4567
+LinkedIn: linkedin.com/in/johndoe | GitHub: github.com/johndoe
+
+---
+
+PROFESSIONAL SUMMARY
+Passionate Computer Science student with strong interest in Machine Learning and Artificial Intelligence. 
+Experienced in Python programming, data analysis, and building machine learning models. 
+Seeking AI/ML internship to apply academic knowledge in real-world projects.
+
+---
+
+EDUCATION
+University of California, Berkeley
+Bachelor of Science in Computer Science
+Expected Graduation: May 2025
+GPA: 3.8/4.0
+Relevant Coursework: Machine Learning, Deep Learning, Natural Language Processing, Computer Vision, Data Science
+
+---
+
+TECHNICAL SKILLS
+Programming Languages: Python, Java, C++, SQL, JavaScript
+Machine Learning: TensorFlow, PyTorch, Scikit-learn, Keras, Pandas, NumPy
+Deep Learning: Neural Networks, Convolutional Neural Networks, Recurrent Neural Networks, Transformers
+Data Science: Data Analysis, Statistical Analysis, Data Visualization (Matplotlib, Seaborn)
+NLP: NLTK, spaCy, Text Processing, Sentiment Analysis
+Computer Vision: OpenCV, Image Processing, Object Detection
+Tools & Platforms: Jupyter Notebook, Git, GitHub, Docker, AWS, Google Colab
+Databases: SQL, MongoDB, Firebase
+
+---
+
+PROFESSIONAL EXPERIENCE
+
+Machine Learning Intern | TechStartup AI
+June 2023 - August 2023
+- Developed machine learning models for customer churn prediction using Python and scikit-learn
+- Improved model accuracy by 15% through feature engineering and hyperparameter tuning
+- Created data visualization dashboards to communicate insights to stakeholders
+- Collaborated with data engineering team using Git and Agile methodology
+
+Data Science Project Assistant | UC Berkeley AI Lab
+January 2023 - Present
+- Analyzing large datasets for research on deep learning optimization
+- Building and training neural networks using TensorFlow and PyTorch
+- Preprocessing and feature engineering for computer vision tasks
+- Publishing research findings in academic papers
+
+---
+
+PROJECTS & ACCOMPLISHMENTS
+
+Sentiment Analysis using Transformers
+- Built NLP model using BERT transformer architecture
+- Achieved 92% accuracy on sentiment classification task
+- Deployed model using Flask API on AWS
+
+Real-time Object Detection System
+- Implemented YOLO v3 for real-time object detection in video streams
+- Optimized inference speed using model pruning and quantization
+- Created Python application with OpenCV integration
+
+---
+
+CERTIFICATIONS & AWARDS
+- Deep Learning Specialization (Coursera, Andrew Ng)
+- Machine Learning Engineer Nanodegree
+- Dean's List - 4 consecutive semesters
+- Best AI Project Award - UC Berkeley CS Department (2023)
+
+---
+
+LANGUAGES
+English: Native
+Spanish: Conversational
+Mandarin: Basic
