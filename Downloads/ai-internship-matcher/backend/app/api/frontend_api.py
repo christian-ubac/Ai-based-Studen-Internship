@@ -3,10 +3,12 @@ Frontend-facing API endpoints for resume upload and recommendation retrieval.
 These endpoints are designed for the Vue frontend and don't require student IDs.
 """
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, BackgroundTasks
 from ..nlp.parser import parse_resume
 from ..nlp.embedding import embed_text, save_embedding
+from ...scripts.process_resume import process_resume_file
 from ..db import get_db
+from ..db import SessionLocal
 from .. import models
 from .scraper import scrape_internships
 import shutil
@@ -71,7 +73,7 @@ def compute_recommendations(db: Session, resume: models.Resume) -> List[Dict[str
 
 
 @router.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_resume(file: UploadFile = File(...), background_tasks: BackgroundTasks = None, db: Session = Depends(get_db)):
     """
     Upload resume from frontend.
     Returns resume_id and extracted skills for matching.
@@ -87,35 +89,53 @@ async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_
         with open(path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         
-        # Parse resume (extract text and skills)
-        parsed = parse_resume(path)
-        
-        # Create embedding
+        # Use shared helper to parse, embed and persist the resume (no scraping here)
         try:
-            emb = embed_text(parsed["text"])
-            emb_path = save_embedding(resume_id, emb, prefix="resume")
-        except Exception as emb_err:
-            # If embedding fails, just use empty string
-            emb_path = ""
-        
-        # Save to database
-        resume = models.Resume(
-            filename=filename,
-            parsed_text=parsed["text"],
-            skills=",".join(parsed.get("skills", [])),
-            outcomes=",".join(parsed.get("outcomes", [])),
-            embedding=emb_path
-        )
-        db.add(resume)
-        db.commit()
-        db.refresh(resume)
-
-        # Trigger scraping from RapidAPI to refresh internship data (synchronous)
-        try:
-            # call internal scraper to fetch and persist newest internships
-            scrape_internships(query="internship", limit=50, db=db)
+            new_resume_id, parsed, emb_path = process_resume_file(path, filename=filename, db=db, run_scrape=False)
+            resume = db.query(models.Resume).filter(models.Resume.id == new_resume_id).first()
         except Exception:
-            # If scraping fails, continue and return recommendations from existing data
+            # fallback to inline logic if helper fails
+            parsed = parse_resume(path)
+            try:
+                emb = embed_text(parsed["text"])
+                emb_path = save_embedding(resume_id, emb, prefix="resume")
+            except Exception:
+                emb_path = ""
+            resume = models.Resume(
+                filename=filename,
+                parsed_text=parsed["text"],
+                skills=",".join(parsed.get("skills", [])),
+                outcomes=",".join(parsed.get("outcomes", [])),
+                embedding=emb_path
+            )
+            db.add(resume)
+            db.commit()
+            db.refresh(resume)
+
+        # Trigger scraping from RapidAPI to refresh internship data.
+        # Run as a background task so the upload response returns quickly.
+        def _run_scrape(q: str = "internship", lim: int = 50):
+            db_sess = SessionLocal()
+            try:
+                try:
+                    scrape_internships(query=q, limit=lim, db=db_sess)
+                except Exception:
+                    # swallow scraper errors in background job
+                    pass
+            finally:
+                db_sess.close()
+
+        try:
+            if background_tasks is not None:
+                background_tasks.add_task(_run_scrape, "internship", 50)
+            else:
+                # fallback to synchronous call if BackgroundTasks not provided
+                try:
+                    scrape_internships(query="internship", limit=50, db=db)
+                except Exception:
+                    pass
+        except Exception:
+            # ensure upload still succeeds even if scheduling fails
             pass
 
         # After saving and scraping, compute recommendations immediately and return them

@@ -20,53 +20,9 @@ from app.config import settings
 from app.nlp.parser import extract_skills_from_text
 
 
-def seed_from_static(db):
-    """Fallback static internships used when RapidAPI credentials are not available."""
-    INTERNSHIPS = [
-        {
-            "title": "Machine Learning Engineering Intern",
-            "company_name": "Google AI",
-            "location": "Mountain View, CA",
-            "description": "Work on cutting-edge machine learning models and contribute to Google's AI research initiatives.",
-            "required_skills": "Python,TensorFlow,PyTorch,Deep Learning,Neural Networks",
-            "posting_url": "https://careers.google.com/jobs/ml-intern",
-            "posted_date": datetime.now() - timedelta(days=5)
-        },
-        {
-            "title": "Data Science Intern",
-            "company_name": "Microsoft Research",
-            "location": "Redmond, WA",
-            "description": "Analyze large datasets and build predictive models for Azure cloud services.",
-            "required_skills": "Python,SQL,Data Analysis,Statistics,Machine Learning",
-            "posting_url": "https://careers.microsoft.com/jobs/ds-intern",
-            "posted_date": datetime.now() - timedelta(days=3)
-        },
-        # ... keep a small curated set (can be extended)
-    ]
-
-    inserted = 0
-    for data in INTERNSHIPS:
-        exists = db.query(models.Internship).filter(
-            models.Internship.title == data["title"],
-            models.Internship.company_name == data["company_name"]
-        ).first()
-        if exists:
-            continue
-        internship = models.Internship(
-            title=data["title"],
-            company_name=data["company_name"],
-            location=data.get("location", ""),
-            description=data.get("description", ""),
-            required_skills=data.get("required_skills", ""),
-            posting_url=data.get("posting_url", ""),
-            posted_date=data.get("posted_date"),
-            is_active=1,
-            source="seed_static"
-        )
-        db.add(internship)
-        inserted += 1
-    db.commit()
-    return inserted
+# Note: The project should rely on the RapidAPI scraper for internships.
+# We intentionally do not include a local/static seed list. This enforces
+# that internships are populated by web scraping (RapidAPI) only.
 
 
 def seed_from_rapidapi(db, query="internship", limit=50):
@@ -95,6 +51,15 @@ def seed_from_rapidapi(db, query="internship", limit=50):
         internships_list = []
 
     inserted = 0
+    skipped_non_ph = 0
+    # Philippine location keywords (lowercase) to enforce local-only insertions
+    PH_LOCATIONS = [
+        "philippin", "philippines", "manila", "metro manila", "quezon city", "quezon",
+        "makati", "cebu", "davao", "iloilo", "bacolod", "baguio", "cagayan",
+        "zamboanga", "pasig", "muntinlupa", "taguig", "las piñas", "valenzuela",
+        "laguna", "batangas", "cebu city", "cebu",
+        "visayas", "mindanao", "luzon", "butuan"
+    ]
     for item in internships_list:
         title = item.get("title") or item.get("job_title") or ""
         company = item.get("company") or item.get("company_name") or ""
@@ -102,6 +67,14 @@ def seed_from_rapidapi(db, query="internship", limit=50):
         description = item.get("description") or item.get("summary") or ""
         posting_url = item.get("url") or item.get("link") or ""
         posted_date_str = item.get("posted_date") or item.get("date") or None
+
+        # Enforce Philippines-only postings: check location or posting_url for PH hints
+        loc_text = (location or "" ).lower()
+        url_text = (posting_url or "").lower()
+        is_ph = any(k in loc_text for k in PH_LOCATIONS) or any(k in url_text for k in [".ph", "philippines"]) 
+        if not is_ph:
+            skipped_non_ph += 1
+            continue
 
         # Basic dedupe
         exists = db.query(models.Internship).filter(
@@ -139,11 +112,18 @@ def seed_from_rapidapi(db, query="internship", limit=50):
         inserted += 1
 
     db.commit()
+    if skipped_non_ph:
+        print(f"Skipped {skipped_non_ph} non-Philippine internship(s)")
     return inserted
 
 
-def seed_database(use_rapidapi=True, query="internship", limit=50):
-    """Main entry: create tables and seed internships either from RapidAPI or static data."""
+def seed_database(query="internship philippines", limit=50):
+    """Main entry: create tables and seed internships from RapidAPI scraper.
+
+    This function requires `RAPID_API_KEY` and `RAPID_API_HOST` to be set in
+    `backend/.env` (or environment). It will only use the RapidAPI source and
+    will not fall back to local static seed data.
+    """
     models.Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -152,20 +132,9 @@ def seed_database(use_rapidapi=True, query="internship", limit=50):
             print(f"Database already has {existing} internships. Skipping seed.")
             return
 
-        inserted = 0
-        if use_rapidapi:
-            try:
-                print("Seeding from RapidAPI...")
-                inserted = seed_from_rapidapi(db, query=query, limit=limit)
-                print(f"Inserted {inserted} internships from RapidAPI.")
-            except Exception as e:
-                print(f"RapidAPI seeding failed: {e}. Falling back to static seed.")
-                inserted = seed_from_static(db)
-                print(f"Inserted {inserted} internships from static list.")
-        else:
-            print("Seeding from static list...")
-            inserted = seed_from_static(db)
-            print(f"Inserted {inserted} internships from static list.")
+        print("Seeding from RapidAPI (Philippines-focused)...")
+        inserted = seed_from_rapidapi(db, query=query, limit=limit)
+        print(f"Inserted {inserted} internships from RapidAPI.")
 
     finally:
         db.close()

@@ -1,5 +1,11 @@
 import os
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+
+# Load .env from backend folder if present so os.getenv() picks values during local runs
+_env_path = os.path.join(os.getcwd(), ".env")
+if os.path.exists(_env_path):
+    load_dotenv(_env_path)
 
 class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/internshipdb")

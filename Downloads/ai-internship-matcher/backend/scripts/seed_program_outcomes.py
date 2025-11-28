@@ -15,74 +15,62 @@ from app import models
 # Define AI/ML programs and their outcomes
 PROGRAMS_DATA = [
     {
-        "name": "Artificial Intelligence",
-        "description": "Study of intelligent systems, machine learning, and AI algorithms",
+        "name": "Bachelor of Science in Computer Science",
+        "description": "Undergraduate program focusing on software development, algorithms, and applied AI for industry.",
         "outcomes": [
             {
-                "outcome_name": "AI Research",
-                "outcome_description": "Conduct cutting-edge AI research, publish papers, develop novel algorithms",
-                "related_skills": "python,pytorch,tensorflow,research,algorithms,deep learning,neural networks,papers",
-                "internship_keywords": "research,papers,algorithm,novel,experiment,publication,academic"
+                "outcome_name": "Software & Systems Development",
+                "outcome_description": "Design and build software systems for local businesses and startups.",
+                "related_skills": "python,java,javascript,git,rest api,database,testing,ci/cd",
+                "internship_keywords": "software,development,backend,frontend,api,web,application"
             },
             {
-                "outcome_name": "AI Engineering",
-                "outcome_description": "Build production AI systems, deploy models, optimize performance",
-                "related_skills": "python,fastapi,deployment,docker,kubernetes,mlops,ci/cd,monitoring",
-                "internship_keywords": "production,deployment,engineer,system,optimization,scale"
+                "outcome_name": "AI & Machine Learning",
+                "outcome_description": "Apply machine learning methods to practical problems like recommendation and prediction.",
+                "related_skills": "python,pytorch,tensorflow,scikit-learn,data analysis,mlops",
+                "internship_keywords": "machine learning,ml,ai,recommendation,prediction,model"
             },
             {
-                "outcome_name": "Machine Learning",
-                "outcome_description": "Develop ML models, feature engineering, model training and evaluation",
-                "related_skills": "python,scikit-learn,pandas,numpy,data analysis,feature engineering,models",
-                "internship_keywords": "machine learning,ml,models,training,features,data science"
+                "outcome_name": "Natural Language Processing (Filipino)",
+                "outcome_description": "Work on NLP systems with a focus on Filipino language resources and applications.",
+                "related_skills": "python,spacy,transformers,nlp,text processing,tagging",
+                "internship_keywords": "nlp,filipino,tagalog,language,chatbot,translation,analysis"
             }
         ]
     },
     {
-        "name": "Data Science",
-        "description": "Analysis of data, statistical modeling, and business intelligence",
+        "name": "Bachelor of Science in Data Science",
+        "description": "Program emphasizing statistical analysis, data engineering, and business analytics relevant to PH industries.",
         "outcomes": [
             {
-                "outcome_name": "Data Analysis",
-                "outcome_description": "Analyze large datasets, extract insights, create visualizations",
-                "related_skills": "python,pandas,sql,tableau,power bi,statistics,visualization,analysis",
-                "internship_keywords": "analysis,data,insights,analytics,visualization,dashboard,sql"
+                "outcome_name": "Data Analytics for Business",
+                "outcome_description": "Extract insights from data to support decision-making in sectors like retail, finance, and government.",
+                "related_skills": "python,pandas,sql,tableau,visualization,statistics",
+                "internship_keywords": "analytics,data analysis,insights,visualization,sql"
             },
             {
-                "outcome_name": "Data Science",
-                "outcome_description": "Build predictive models using data science techniques",
-                "related_skills": "python,scikit-learn,statistical analysis,modeling,prediction,machine learning",
-                "internship_keywords": "data science,predictive,model,analytics,science"
-            },
-            {
-                "outcome_name": "Business Intelligence",
-                "outcome_description": "Transform data into actionable business insights",
-                "related_skills": "sql,tableau,power bi,analytics,business,reporting,dashboard",
-                "internship_keywords": "business,intelligence,analytics,insights,reporting,bi"
+                "outcome_name": "Applied Machine Learning",
+                "outcome_description": "Deploy ML solutions for local problems such as traffic, agriculture, and health.",
+                "related_skills": "python,scikit-learn,modeling,feature engineering,deployment",
+                "internship_keywords": "deployment,model,ml,prediction,agriculture,health"
             }
         ]
     },
     {
-        "name": "Computer Science",
-        "description": "General computer science with applications in AI/ML",
+        "name": "Bachelor of Science in Electronics and Communications Engineering",
+        "description": "Engineering program with applications to embedded AI, IoT, and telecommunications in the Philippines.",
         "outcomes": [
             {
-                "outcome_name": "Software Development",
-                "outcome_description": "Develop software applications, write clean code, build systems",
-                "related_skills": "python,java,c++,software development,design patterns,testing,git",
-                "internship_keywords": "software,development,engineer,code,application,build"
+                "outcome_name": "Embedded AI & IoT",
+                "outcome_description": "Design edge-AI and IoT solutions for smart agriculture, smart cities, and industry.",
+                "related_skills": "c++,python,embedded systems,iot,raspberry pi,microcontrollers",
+                "internship_keywords": "iot,embedded,edge ai,agriculture,smart city"
             },
             {
-                "outcome_name": "Natural Language Processing",
-                "outcome_description": "Work on NLP tasks: sentiment analysis, translation, generation",
-                "related_skills": "python,nltk,spacy,transformers,bert,nlp,text processing,nlp",
-                "internship_keywords": "nlp,language,text,nlp,nlp,generation,sentiment,translation"
-            },
-            {
-                "outcome_name": "Computer Vision",
-                "outcome_description": "Build vision systems: image classification, object detection, segmentation",
-                "related_skills": "python,opencv,pytorch,cnn,computer vision,image,deep learning",
-                "internship_keywords": "computer vision,vision,image,object detection,segmentation,cv"
+                "outcome_name": "Communications & Networking",
+                "outcome_description": "Work on networking, telecommunication systems and connectivity solutions tailored for local infrastructure.",
+                "related_skills": "networking,linux,protocols,wireless,telecom",
+                "internship_keywords": "network,wireless,telecom,connectivity,5g"
             }
         ]
     }

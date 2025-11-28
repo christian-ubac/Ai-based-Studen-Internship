@@ -1,129 +1,175 @@
 """
-Database seeding script for AI Internship Matcher.
-Creates realistic AI internship listings, sample resumes, and initial recommendations.
-"""
+Database seeding script for AI Internship Matcher (fixed to match models).
+Creates a few programs, students, internships, a resume and simple recommendations.
+Run from the `backend` folder with the project's virtualenv active:
 
-import os
-import sys
+    python scripts/seed_db.py
+
+This script uses the SQLAlchemy models defined in `app.models` and the
+embedding helpers in `app.nlp.embedding`.
+"""
 from datetime import datetime, timedelta
 import random
 from pathlib import Path
-from typing import List, Dict
+import sys
+import os
 
-# Add the parent directory to the path so we can import app
+# Ensure project root is importable
 base_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(base_dir))
 
 from app.db import SessionLocal, engine
-from app.models import Base, Internship, Resume, Skill, User, Match
-from app.nlp.embedding import embed_text, save_embedding, cosine_similarity
-from scripts.seed_data import COMPANIES, AI_SKILLS, INTERNSHIP_TEMPLATES, SAMPLE_RESUMES
+from app.models import Base, Student, Resume, Internship, InternshipDepartment, Recommendation, Program, ProgramOutcome
+from app.nlp.embedding import embed_text, save_embedding
 
-def generate_internship_description(template: dict, company: dict, skills: List[str]) -> Dict:
-    """Generate a realistic internship posting from a template."""
-    today = datetime.now()
-    description = template["description"].format(
+# Small sample data
+AI_SKILLS = [
+    "python", "pytorch", "tensorflow", "machine learning", "deep learning",
+    "nlp", "computer vision", "data analysis", "docker", "git"
+]
+
+COMPANIES = [
+    {"name": "OpenAI Labs", "locations": ["San Francisco, CA", "Remote"]},
+    {"name": "DeepVision", "locations": ["New York, NY", "Remote"]},
+    {"name": "DataWorks", "locations": ["Boston, MA", "Remote"]}
+]
+
+INTERNSHIP_TEMPLATES = [
+    {"title": "Machine Learning Intern", "description": "{company} seeks an ML Intern to work on {skills}. Additional skills: {additional_skills}."},
+    {"title": "NLP Research Intern", "description": "Join {company} to build NLP models for real-world tasks. Required: {skills}."},
+    {"title": "Computer Vision Intern", "description": "Work on CV pipelines at {company}. Focus: {skills}."}
+]
+
+SAMPLE_RESUMES = [
+    {
+        "name": "Alex Chen",
+        "email": "alex.chen@example.com",
+        "gpa": 3.8,
+        "skills": ["python", "pytorch", "docker", "git"],
+        "outcomes": ["machine learning", "research"]
+    }
+]
+
+
+def make_description(template, company, skills):
+    return template["description"].format(
         company=company["name"],
         skills=", ".join(skills[:3]),
-        additional_skills=", ".join(skills[3:]),
-        location=random.choice(company["locations"])
+        additional_skills=", ".join(skills[3:])
     )
-    
-    return {
-        "title": template["title"],
-        "company_name": company["name"],
-        "location": random.choice(company["locations"]),
-        "description": description,
-        "required_skills": skills,
-        "posting_date": today - timedelta(days=random.randint(0, 14)),
-        "is_active": True,
-        "salary_range": f"${random.randint(20, 50)}k - ${random.randint(51, 80)}k",
-        "application_url": f"https://careers.{company['name'].lower().replace(' ', '')}.com/intern",
-        "employment_type": "Internship",
-        "duration": f"{random.randint(3, 6)} months"
-    }
+
 
 def seed_database():
-    """Seed the database with realistic AI internship data and sample resumes."""
+    print("Creating tables...")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    
+
     try:
-        # Clear existing data
-        print("Clearing existing data...")
-        db.query(Match).delete()
+        # Clear existing data conservatively
+        print("Clearing existing internships, resumes, students, recommendations...")
+        db.query(Recommendation).delete()
         db.query(Resume).delete()
         db.query(Internship).delete()
-        db.query(Skill).delete()
-        db.query(User).delete()
+        db.query(InternshipDepartment).delete()
+        db.query(ProgramOutcome).delete()
+        db.query(Program).delete()
+        db.query(Student).delete()
         db.commit()
-        
-        # Seed skills first
-        print("\nSeeding AI skills...")
-        skills_dict = {}
-        for skill_name in AI_SKILLS:
-            skill = Skill(name=skill_name)
-            db.add(skill)
-            skills_dict[skill_name] = skill
+
+        # Create a sample program and outcomes
+        program = Program(name="Computer Science", description="CS program focusing on AI/ML")
+        db.add(program)
         db.commit()
-        print(f"Added {len(skills_dict)} skills")
-    
-        print("\nSeeding students...")
+
+        outcome_ml = ProgramOutcome(program_id=program.id, outcome_name="Machine Learning", related_skills=",".join(["machine learning","deep learning","pytorch"]))
+        outcome_ds = ProgramOutcome(program_id=program.id, outcome_name="Data Science", related_skills=",".join(["data analysis","sql","python"]))
+        db.add_all([outcome_ml, outcome_ds])
+        db.commit()
+
+        # Seed students
         students = []
-        for student_data in STUDENTS:
-            student = Student(**student_data)
-            db.add(student)
-            students.append(student)
+        for r in SAMPLE_RESUMES:
+            s = Student(name=r["name"], email=r["email"], gpa=r["gpa"], program_id=program.id)
+            db.add(s)
+            students.append(s)
         db.commit()
-        print(f"Added {len(students)} students")
-    
-        print("\nCreating sample resume...")
-        # Create resume for first student (Alex Chen)
+
+        # Create internships
+        internships = []
+        for comp in COMPANIES:
+            for tmpl in INTERNSHIP_TEMPLATES:
+                skills = random.sample(AI_SKILLS, k=4)
+                ins = Internship(
+                    title=tmpl["title"],
+                    company_name=comp["name"],
+                    location=random.choice(comp["locations"]),
+                    description=make_description(tmpl, comp, skills),
+                    required_skills=",".join(skills),
+                    outcome_focus=random.choice(["Machine Learning", "Data Science"]),
+                    posting_url=f"https://careers.{comp['name'].lower().replace(' ', '')}.com/apply",
+                    posted_date=datetime.utcnow() - timedelta(days=random.randint(0, 30)),
+                    is_active=1,
+                    source="seed"
+                )
+                db.add(ins)
+                internships.append(ins)
+        db.commit()
+
+        # Create a resume for the first student
+        student = students[0]
+        resume_text = "\n".join([f"Worked on {s} projects" for s in SAMPLE_RESUMES[0]["skills"]])
         resume = Resume(
-            student_id=students[0].id,
-            filename="alex_chen_resume.pdf",
-            parsed_text=SAMPLE_RESUME_TEXT,
-            skills="python,pytorch,tensorflow,machine learning,docker,git",
-            outcomes="ml research,sentiment analysis,object detection",
+            student_id=student.id,
+            filename=f"{student.name.replace(' ', '_').lower()}_resume.pdf",
+            parsed_text=resume_text,
+            skills=",".join(SAMPLE_RESUMES[0]["skills"]),
+            outcomes=",".join(SAMPLE_RESUMES[0]["outcomes"]),
             created_at=datetime.utcnow()
         )
         db.add(resume)
         db.commit()
-    
-        # Create embedding for resume
-        resume_embedding = embed_text(f"{resume.parsed_text} {resume.skills} {resume.outcomes}")
-        resume.embedding = save_embedding(resume.id, resume_embedding, prefix="resume")
-        db.add(resume)
-        db.commit()
-    
-        print("\nGenerating recommendations...")
-        # Create some sample recommendations
-        for dept in departments[:3]:  # Top 3 matches for Alex
-            score = 0.0
-            if "machine learning" in dept.required_skills:
-                score += 0.3
-            if "python" in dept.required_skills:
-                score += 0.2
-            if any(skill in dept.required_skills for skill in ["pytorch", "tensorflow"]):
-                score += 0.3
-            if "deep learning" in dept.required_skills:
-                score += 0.2
-            
-            recommendation = Recommendation(
-                student_id=students[0].id,
-                department_id=dept.id,
-                score=min(score + 0.1, 1.0),  # Normalize to 0-1
-                reason=f"Skills match: {', '.join(set(dept.required_skills.split(',')) & set(resume.skills.split(',')))}"
+
+        # Create embedding for resume (if sentence-transformers available)
+        try:
+            emb = embed_text(resume.parsed_text + " " + resume.skills + " " + resume.outcomes)
+            emb_path = save_embedding(resume.id, emb, prefix="resume")
+            resume.embedding = emb_path
+            db.add(resume)
+            db.commit()
+        except Exception as e:
+            print("Warning: failed to create embedding (model may be missing):", e)
+            db.rollback()
+
+        # Generate simple recommendation scores by skill overlap
+        print("Generating recommendations based on simple skill overlap...")
+        for ins in internships:
+            student_skills = set(resume.skills.split(","))
+            ins_skills = set(ins.required_skills.split(",")) if ins.required_skills else set()
+            overlap = len(student_skills.intersection(ins_skills))
+            # Score 0-100
+            score = min(100, 20 * overlap + random.randint(0, 20))
+            rec = Recommendation(
+                student_id=student.id,
+                internship_id=ins.id,
+                department_id=None,
+                outcome_match=ins.outcome_focus,
+                score=float(score),
+                skill_match_score=float(min(100, 25 * overlap)),
+                outcome_match_score=50.0 if ins.outcome_focus in resume.outcomes else 10.0,
+                reason=f"Matched skills: {', '.join(student_skills.intersection(ins_skills))}" if overlap else "No direct skills matched"
             )
-            db.add(recommendation)
+            db.add(rec)
         db.commit()
-        print("Database seeded successfully!")
+
+        print("Seeding complete: added", len(students), "student(s)", len(internships), "internships and recommendations.")
+
     except Exception as e:
         db.rollback()
-        print(f"Error seeding database: {e}")
+        print("Error during seeding:", e)
         raise
     finally:
         db.close()
 
+
 if __name__ == '__main__':
-    seed()
+    seed_database()

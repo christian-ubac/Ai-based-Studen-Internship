@@ -12,236 +12,222 @@ This application matches AI/ML students with relevant internship opportunities u
 ## Prerequisites
 - Python 3.8+
 - Node.js 16+
-- PostgreSQL (or SQLite for development)
-- pip and npm package managers
+
+# AI Internship Matcher — Setup & Running Guide
+
+This document walks through setting up the project (frontend + backend) on Windows
+using PowerShell. It covers environment setup, database creation, seeding, and running
+the application end-to-end.
+
+Workspace root (example):
+`c:\Users\ACER\Downloads\final na jud ni xd\Ai-based-Studen-Internship\Downloads\ai-internship-matcher`
 
 ---
 
-## Backend Setup
+## 1 — Prerequisites
+- Python 3.8+ (recommend 3.10/3.11)
+- Node.js 16+ and npm
+- PostgreSQL (local) or Docker
+- PowerShell (you have v5.1)
+- git
 
-### 1. Install Backend Dependencies
+Optional: Docker for Postgres or pgAdmin
+
+---
+
+## 2 — Backend setup (venv, deps, env)
+
+1. Open PowerShell and create/activate a virtual environment in `backend`:
+
 ```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\backend
+cd "<repo-root>\backend"
+python -m venv .venv
+. .venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 2. Set Up Database
-The database is automatically created when you run the backend. To seed it with sample internships:
+2. Create `backend/.env` (or set env vars in PowerShell). Minimum keys:
 
-```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\backend
-python scripts/seed_internships.py
+```
+DATABASE_URL=postgresql://internship_user:Internship%402025@localhost:5432/internshipdb
+RAPID_API_KEY=your_rapidapi_key_here
+RAPID_API_HOST=internships-api.p.rapidapi.com
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+OPENAI_API_KEY=
+JOBSCRAPER_RATE_LIMIT=1.0
 ```
 
-This populates the database with 12 sample AI internship listings from major tech companies.
-
-Before running the backend, copy the example env file and update credentials:
+Use PowerShell to set for the session (example):
 
 ```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\backend
-copy .env.example .env
-# then edit .env to set DATABASE_URL and any API keys
+$env:DATABASE_URL='postgresql://internship_user:Internship%402025@localhost:5432/internshipdb'
+$env:RAPID_API_KEY='your_rapidapi_key_here'
+$env:RAPID_API_HOST='internships-api.p.rapidapi.com'
 ```
 
-### 3. Run the Backend
-```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\backend
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The backend will start at: `http://localhost:8000`
-
-**Available Endpoints:**
-- `POST /api/upload-resume` - Upload a resume file
-- `GET /api/get-recommendations` - Get internship recommendations based on resume
-- `GET /api/health` - Health check endpoint
-- `POST /upload/resume/{student_id}` - Original upload endpoint (legacy)
-- `GET /recommend/student/{student_id}` - Original recommendations endpoint (legacy)
+Note: Passwords with special characters must be URL-encoded in `DATABASE_URL` (e.g. `@` → `%40`).
 
 ---
 
-## Frontend Setup
+## 3 — Create PostgreSQL database
 
-### 1. Install Frontend Dependencies
+Option A — local Postgres (psql):
+
 ```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\frontend
+# Run as a user with rights to create roles/databases (often 'postgres')
+psql -U postgres -h localhost -p 5432
+# In psql:
+CREATE ROLE internship_user WITH LOGIN PASSWORD 'Internship@2025';
+CREATE DATABASE internshipdb OWNER internship_user;
+\q
+```
+
+Option B — use helper script (from backend, venv active):
+
+```powershell
+python .\scripts\create_db.py
+# If your postgres superuser requires a password, set SUPERPASS in env first:
+$env:SUPERPASS='your_postgres_super_password'
+python .\scripts\create_db.py
+```
+
+Option C — Docker Postgres:
+
+```powershell
+docker run --name ai-internship-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=internshipdb -p 5432:5432 -d postgres:15
+```
+
+---
+
+## 4 — Seed the database
+
+1. Seed program outcomes (Philippine-focused):
+
+```powershell
+cd <repo-root>\backend
+. .venv\Scripts\Activate.ps1
+python .\scripts\seed_program_outcomes.py
+```
+
+2. Create example students/resume (optional):
+
+```powershell
+python .\scripts\seed_db.py
+```
+
+3. Seed internships (RapidAPI-backed, Philippines-only):
+
+```powershell
+# helper that loads backend/.env and runs the seeder (checks RAPID_API_KEY)
+\<repo-root>\backend\scripts\run_seed_internships.ps1
+# or run directly (ensure RAPID_API_KEY is in env)
+cd backend
+python .\scripts\seed_internships.py
+```
+
+Notes:
+- `seed_internships.py` now enforces PH-only insertions by matching location text and `.ph` URLs.
+- Ensure `RAPID_API_KEY` and `RAPID_API_HOST` are set in `.env` or env before running the seeder.
+
+---
+
+## 5 — Start the backend server
+
+From `backend/` with venv active:
+
+```powershell
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Health check:
+
+```powershell
+Invoke-RestMethod -Method GET -Uri http://localhost:8000/api/health
+# expected: {"status":"ok","message":"Frontend API is running"}
+```
+
+---
+
+## 6 — Frontend setup & run (Vite)
+
+Open a new PowerShell terminal and run:
+
+```powershell
+cd <repo-root>\frontend
 npm install
-npm install vue-router@4
-```
-
-### 2. Run Development Server
-```powershell
-cd C:\Users\ACER\Downloads\ai-internship-matcher\frontend
 npm run dev
 ```
 
-The frontend will start at: `http://localhost:5173` (or similar Vite port)
+Open `http://localhost:5173` in your browser. The frontend proxies API requests to the backend (port 8000).
 
 ---
 
-## Testing the Full Flow
+## 7 — Verify end-to-end
 
-### 1. Upload a Resume
-1. Open frontend at `http://localhost:5173`
-2. Click "Upload Your Resume"
-3. Select the sample resume: `C:\Users\ACER\Downloads\ai-internship-matcher\sample_resume.txt`
-4. Or drag and drop a PDF/DOC/DOCX file
-5. Click "Upload & Find Internships"
-
-### 2. View Recommendations
-After upload, you'll see a list of matched AI internships with:
-- Match percentage based on skill overlap
-- Company name and location
-- Job description
-- Matched skills from your resume
-- Link to apply
-
-### 3. Sample Skills Extracted from Resume
-The sample resume contains these AI/ML skills:
-- Python
-- TensorFlow
-- PyTorch
-- Deep Learning
-- Machine Learning
-- Neural Networks
-- Data Analysis
-- NLP
-- Computer Vision
-- SQL
-- Scikit-learn
-- And more...
-
-These will be matched against internship requirements to generate recommendations.
+1. Open frontend UI and upload a resume (PDF/DOCX/TXT); the frontend calls `POST /api/upload-resume`.
+2. The upload returns `resume_id` and extracted skills; recommendations will be computed from internships in DB.
+3. If you want updated recommendations after scraping completes, poll `GET /api/get-recommendations?resume_id=<id>`.
 
 ---
 
-## API Request/Response Examples
+## 8 — Optional: pgAdmin
 
-### Upload Resume
-```bash
-POST /api/upload-resume
-Content-Type: multipart/form-data
+Add a server in pgAdmin:
+- Host: `localhost`
+- Port: `5432`
+- Username: `internship_user` (or your DB user)
+- Password: the DB password
 
-{
-  "file": <binary resume file>
-}
-
-Response:
-{
-  "status": "ok",
-  "resume_id": 1,
-  "extracted_skills": ["Python", "TensorFlow", "Deep Learning", ...]
-}
-```
-
-### Get Recommendations
-```bash
-GET /api/get-recommendations?resume_id=1
-
-Response:
-[
-  {
-    "id": 1,
-    "title": "Machine Learning Engineering Intern",
-    "company_name": "Google AI",
-    "location": "Mountain View, CA",
-    "description": "Work on cutting-edge ML models...",
-    "posting_url": "https://careers.google.com/...",
-    "matched_skills": ["Python", "TensorFlow", "Deep Learning"],
-    "match_score": 85,
-    "posted_date": "2025-11-07T10:30:00"
-  },
-  ...
-]
-```
+Use Query Tool to inspect tables, e.g. `SELECT tablename FROM pg_tables WHERE schemaname='public';`.
 
 ---
 
-## Project Structure
+## 9 — Troubleshooting
 
-```
-ai-internship-matcher/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── frontend_api.py    # NEW: Frontend endpoints
-│   │   │   ├── uploads.py          # Resume upload
-│   │   │   ├── recommendations.py  # Recommendations
-│   │   │   └── scraper.py          # Web scraping
-│   │   ├── models.py               # Database models (Internship, Resume, etc)
-│   │   ├── crud.py                 # Database operations
-│   │   ├── db.py                   # Database setup
-│   │   ├── main.py                 # FastAPI app
-│   │   ├── nlp/
-│   │   │   ├── parser.py           # Resume parsing
-│   │   │   ├── embedding.py        # Text embeddings
-│   │   │   └── ranker.py           # ML ranking
-│   │   └── llm/
-│   │       └── llm_client.py       # LLM integration
-│   ├── scripts/
-│   │   ├── seed_internships.py     # NEW: Populate DB with sample data
-│   │   └── seed_db.py              # Original seed script
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── UploadResume.vue    # Resume upload (Vue 3)
-│   │   │   └── Recommendations.vue # Results display (Vue 3)
-│   │   ├── App.vue
-│   │   ├── main.js
-│   │   └── style.css               # Global styles
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.cjs
-│
-└── sample_resume.txt               # NEW: Example resume for testing
-```
+- Database connection failed: verify `DATABASE_URL`, Postgres running, and credentials. URL-encode special chars in password.
+- RapidAPI errors: ensure `RAPID_API_KEY` and `RAPID_API_HOST` are correct and you haven’t exceeded rate limits.
+- Embedding model downloads: `sentence-transformers` may download models on first use; ensure enough disk space and network.
+- spacy model: run `python -m spacy download en_core_web_sm` if parser fails to auto-download.
+- If frontend shows `ECONNREFUSED` to `/api`, start the backend or adjust proxy in `frontend/vite.config.js`.
 
 ---
 
-## Troubleshooting
+## 10 — Security & housekeeping
 
-### Backend Issues
+- Do NOT commit `backend/.env` with secrets. Consider adding `backend/.env` to `.gitignore` and create `backend/.env.example` with placeholders.
+- Rotate any API keys accidentally committed.
 
-**Error: "Port 8000 already in use"**
+---
+
+## Quick copy-paste checklist
+
 ```powershell
-# Change the port:
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
-```
+# Backend
+cd <repo-root>\backend
+python -m venv .venv
+. .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+# set env or edit backend/.env
+python .\scripts\create_db.py   # optional helper
+python .\scripts\seed_program_outcomes.py
+\<repo-root>\backend\scripts\run_seed_internships.ps1
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-**Error: Database connection failed**
-- Ensure PostgreSQL is running (or using SQLite)
-- Check `backend/app/db.py` for connection string
-
-**Error: Resume parsing fails**
-- Install required PDF parsing libraries: `pip install pdf2image pytesseract pdfminer.six`
-- Ensure uploaded file is valid PDF/DOC/DOCX
-
-### Frontend Issues
-
-**Error: "vue-router" module not found**
-```powershell
-npm install vue-router@4
+# Frontend (new shell)
+cd <repo-root>\frontend
+npm install
 npm run dev
 ```
 
-**Error: CORS errors from backend**
-- Backend already has CORS enabled in `main.py`
-- Ensure both frontend and backend are running
-- Check browser console for actual error message
-
-**Styling issues (white page)**
-- Run `npm run dev` to rebuild with Tailwind/PostCSS
-- Check browser DevTools for CSS file load status
-
 ---
 
-## Next Steps
+If you want, I can now:
+- Add `backend/.env.example` and add `backend/.env` to `.gitignore` (recommended).
+- Make the Philippines filter stricter (match canonical city list and country fields).
+- Create a small `verify_db_connection.py` script you can run locally to test DB connectivity.
 
-1. **Connect to Real Database**
-   - Update `backend/app/db.py` to use PostgreSQL instead of SQLite
+End of guide.
    - Update connection string in `.env` file
 
 2. **Add Web Scraping**
