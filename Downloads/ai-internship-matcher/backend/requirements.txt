@@ -19,3 +19,4 @@ joblib
 openai
 llama-cpp-python
 python-dotenv
+pgvector

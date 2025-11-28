@@ -2,6 +2,11 @@ from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKe
 from sqlalchemy.orm import relationship
 from .db import Base
 from datetime import datetime
+try:
+    # optional: use pgvector for efficient vector storage/search in Postgres
+    from pgvector.sqlalchemy import Vector
+except Exception:
+    Vector = None
 
 class Program(Base):
     """University AI/ML Programs"""
@@ -61,7 +66,11 @@ class Resume(Base):
     skills = Column(Text)  # comma-separated extracted skills
     outcomes = Column(Text)  # comma-separated detected outcomes from resume
     created_at = Column(DateTime, default=datetime.utcnow)
-    embedding = Column(Text)
+    # embedding: store as pgvector when available, otherwise store as text path or JSON
+    if Vector is not None:
+        embedding = Column(Vector(384))
+    else:
+        embedding = Column(Text)
     student = relationship("Student", back_populates="resumes")
 
 class InternshipDepartment(Base):
@@ -71,7 +80,10 @@ class InternshipDepartment(Base):
     program_focus = Column(String)
     description = Column(Text)
     required_skills = Column(Text)
-    embedding = Column(Text)
+    if Vector is not None:
+        embedding = Column(Vector(384))
+    else:
+        embedding = Column(Text)
 
 class Internship(Base):
     __tablename__ = "internships"
@@ -87,6 +99,11 @@ class Internship(Base):
     is_active = Column(Integer, default=1)
     source = Column(String)  # where it was scraped from (rapidapi, jobstreet, etc.)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # optional vector field for semantic search (requires pgvector in DB)
+    if Vector is not None:
+        embedding = Column(Vector(384))
+    else:
+        embedding = Column(Text)
 
 class Recommendation(Base):
     __tablename__ = "recommendations"

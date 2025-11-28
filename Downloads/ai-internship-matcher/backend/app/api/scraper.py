@@ -8,6 +8,7 @@ from ..db import get_db
 from sqlalchemy.orm import Session
 from .. import models
 from ..nlp.parser import extract_skills_from_text
+from ..utils.location import is_philippines_location
 
 router = APIRouter(prefix="/scrape", tags=["scrape"])
 HEADERS = {"User-Agent": "InternshipMatcherBot/0.1 (email@example.com)"}
@@ -80,6 +81,12 @@ def scrape_internships(query: str = "internship", limit: int = 10, db: Session =
             skills = list(set(skills))  # dedupe
         except Exception:
             skills = []
+
+        # Enforce Philippines-only postings: use stricter helper when possible
+        country = item.get("country") or item.get("country_name") or None
+        if not is_philippines_location(location, posting_url, description, country):
+            results.append({"title": title, "company": company, "saved": False, "reason": "non-PH"})
+            continue
 
         # Dedupe by title + company
         exists = db.query(models.Internship).filter(

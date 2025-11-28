@@ -56,10 +56,19 @@ def process_resume_file(path: str, filename: Optional[str] = None, db: Optional[
         emb_path = ""
         try:
             emb = embed_text(parsed.get("text", ""))
-            emb_path = save_embedding(resume.id, emb, prefix="resume")
-            resume.embedding = emb_path
-            db.add(resume)
-            db.commit()
+            # If model is available, store vector directly in DB (pgvector)
+            try:
+                # accept numpy arrays or lists
+                resume.embedding = emb.tolist() if hasattr(emb, 'tolist') else list(emb)
+                db.add(resume)
+                db.commit()
+            except Exception:
+                # Fallback: save to disk and store path
+                db.rollback()
+                emb_path = save_embedding(resume.id, emb, prefix="resume")
+                resume.embedding = emb_path
+                db.add(resume)
+                db.commit()
         except Exception:
             # embedding optional; continue
             db.rollback()
